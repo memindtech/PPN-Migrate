@@ -1,30 +1,30 @@
-// app/stores/appConfig.ts
 import { defineStore } from 'pinia'
+import { translations, type Locale } from '../utils/translations'
 
 export const useAppConfigStore = defineStore('appConfig', {
   state: () => ({
     theme: 'light',
-    locale: 'TH',
-    // ดึงข้อมูลภาษาจากไฟล์ language.js เดิมของคุณ
-    translations: {} as any 
+    locale: 'TH' as Locale,
   }),
+  getters: {
+    // นิยาม t เป็น Getter เพื่อให้ดึงข้อมูลภาษาตาม locale ปัจจุบัน
+    t: (state) => translations[state.locale]
+  },
+
   actions: {
-    // ฟังก์ชันสลับธีม
     toggleTheme() {
       this.theme = this.theme === 'light' ? 'dark' : 'light'
-      localStorage.setItem('ppn_theme', this.theme)
-      this.applyTheme()
-    },
-    // ฟังก์ชันเปลี่ยนภาษา
-    setLanguage(lang: string) {
-      this.locale = lang
-      localStorage.setItem('ppn_language', lang)
-      // โหลด object ภาษาใหม่ (อ้างอิงจาก window.lang เดิม)
-      if (import.meta.client && window.lang) {
-        this.translations = window.lang[lang]
+      if (import.meta.client) {
+        localStorage.setItem('ppn_theme', this.theme)
+        this.applyTheme()
       }
     },
-    // ใช้ Class กับ Body
+    setLanguage(lang: Locale) {
+      this.locale = lang // เปลี่ยนแค่ locale
+      if (import.meta.client) {
+        localStorage.setItem('ppn_language', lang)
+      }
+    },
     applyTheme() {
       if (import.meta.client) {
         const root = document.documentElement
@@ -34,6 +34,12 @@ export const useAppConfigStore = defineStore('appConfig', {
           root.classList.remove('dark-theme')
         }
       }
-    }
+    },
+    toggleLanguage() {
+      const locales: Locale[] = ['TH', 'EN', 'CN'];
+      const currentIndex = locales.indexOf(this.locale);
+      const nextIndex = (currentIndex + 1) % locales.length;
+      this.setLanguage(locales[nextIndex]);
+    },
   }
 })
